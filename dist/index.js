@@ -32260,6 +32260,15 @@ async function run() {
     const token = core.getInput('github-token', { required: true });
     const anthropicKey = core.getInput('anthropic-key', { required: true });
     let prNumber = core.getInput('pr-number');
+    const autoReview = core.getInput('auto-review', { required: false }) || 'true';
+
+    // Check if auto-review is disabled
+    if (autoReview.toLowerCase() === 'false') {
+      core.info('⏭️  Auto-review is disabled, skipping code review');
+      core.setOutput('diff_size', '0');
+      core.setOutput('review', 'Auto-review disabled');
+      return;
+    }
 
     // Get PR number from event if not provided
     const context = github.context;

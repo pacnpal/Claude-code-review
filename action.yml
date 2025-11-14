@@ -11,6 +11,10 @@ inputs:
   pr-number:
     description: 'Pull request number'
     required: true
+  auto-review:
+    description: 'Enable automatic code reviews (set to false to skip review)'
+    required: false
+    default: 'true'
 outputs:
   diff_size:
     description: 'Size of the relevant code changes'
