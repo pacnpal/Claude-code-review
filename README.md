@@ -87,6 +87,32 @@ For existing pull requests, you can manually trigger the review:
 3. Fill in the branch and pull request number
 4. Click "Run Workflow"
 
+### Disabling Auto-Review
+
+You can disable automatic reviews and only use manual triggers by setting `auto-review: false`:
+
+```yaml
+- name: Run Claude Review
+  uses: pacnpal/claude-code-review@main
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+    anthropic-key: ${{ secrets.ANTHROPIC_API_KEY }}
+    pr-number: ${{ github.event.pull_request.number || inputs.pr_number }}
+    auto-review: false  # Disables automatic reviews
+```
+
+You can also make it conditional based on labels or other criteria:
+
+```yaml
+- name: Run Claude Review
+  uses: pacnpal/claude-code-review@main
+  with:
+    github-token: ${{ secrets.GITHUB_TOKEN }}
+    anthropic-key: ${{ secrets.ANTHROPIC_API_KEY }}
+    pr-number: ${{ github.event.pull_request.number || inputs.pr_number }}
+    auto-review: ${{ contains(github.event.pull_request.labels.*.name, 'needs-review') }}
+```
+
 ## Setup
 
 ### Prerequisites
@@ -119,6 +145,7 @@ For existing pull requests, you can manually trigger the review:
 | `github-token` | GitHub token for API access | Yes | N/A |
 | `anthropic-key` | Anthropic API key for Claude | Yes | N/A |
 | `pr-number` | Pull request number to review | Yes | N/A |
+| `auto-review` | Enable automatic code reviews (set to `false` to skip) | No | `true` |
 
 ## Outputs
 
