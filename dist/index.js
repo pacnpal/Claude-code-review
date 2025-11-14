@@ -3736,7 +3736,7 @@ module.exports = __toCommonJS(dist_src_exports);
 var import_universal_user_agent = __nccwpck_require__(3843);
 
 // pkg/dist-src/version.js
-var VERSION = "9.0.5";
+var VERSION = "9.0.6";
 
 // pkg/dist-src/defaults.js
 var userAgent = `octokit-endpoint.js/${VERSION} ${(0, import_universal_user_agent.getUserAgent)()}`;
@@ -3841,9 +3841,9 @@ function addQueryParameters(url, parameters) {
 }
 
 // pkg/dist-src/util/extract-url-variable-names.js
-var urlVariableRegex = /\{[^}]+\}/g;
+var urlVariableRegex = /\{[^{}}]+\}/g;
 function removeNonChars(variableName) {
-  return variableName.replace(/^\W+|\W+$/g, "").split(/,/);
+  return variableName.replace(/(?:^\W+)|(?:(?<!\W)\W+$)/g, "").split(/,/);
 }
 function extractUrlVariableNames(url) {
   const matches = url.match(urlVariableRegex);
@@ -4029,7 +4029,7 @@ function parse(options) {
     }
     if (url.endsWith("/graphql")) {
       if (options.mediaType.previews?.length) {
-        const previewsFromAcceptHeader = headers.accept.match(/[\w-]+(?=-preview)/g) || [];
+        const previewsFromAcceptHeader = headers.accept.match(/(?<![\w-])[\w-]+(?=-preview)/g) || [];
         headers.accept = previewsFromAcceptHeader.concat(options.mediaType.previews).map((preview) => {
           const format = options.mediaType.format ? `.${options.mediaType.format}` : "+json";
           return `application/vnd.github.${preview}-preview${format}`;
@@ -4278,7 +4278,7 @@ __export(dist_src_exports, {
 module.exports = __toCommonJS(dist_src_exports);
 
 // pkg/dist-src/version.js
-var VERSION = "9.2.1";
+var VERSION = "9.2.2";
 
 // pkg/dist-src/normalize-paginated-list-response.js
 function normalizePaginatedListResponse(response) {
@@ -4326,7 +4326,7 @@ function iterator(octokit, route, parameters) {
           const response = await requestMethod({ method, url, headers });
           const normalizedResponse = normalizePaginatedListResponse(response);
           url = ((normalizedResponse.headers.link || "").match(
-            /<([^>]+)>;\s*rel="next"/
+            /<([^<>]+)>;\s*rel="next"/
           ) || [])[1];
           return { value: normalizedResponse };
         } catch (error) {
@@ -6878,7 +6878,7 @@ var RequestError = class extends Error {
     if (options.request.headers.authorization) {
       requestCopy.headers = Object.assign({}, options.request.headers, {
         authorization: options.request.headers.authorization.replace(
-          / .*$/,
+          /(?<! ) .*$/,
           " [REDACTED]"
         )
       });
@@ -6946,7 +6946,7 @@ var import_endpoint = __nccwpck_require__(4471);
 var import_universal_user_agent = __nccwpck_require__(3843);
 
 // pkg/dist-src/version.js
-var VERSION = "8.4.0";
+var VERSION = "8.4.1";
 
 // pkg/dist-src/is-plain-object.js
 function isPlainObject(value) {
@@ -7005,7 +7005,7 @@ function fetchWrapper(requestOptions) {
       headers[keyAndValue[0]] = keyAndValue[1];
     }
     if ("deprecation" in headers) {
-      const matches = headers.link && headers.link.match(/<([^>]+)>; rel="deprecation"/);
+      const matches = headers.link && headers.link.match(/<([^<>]+)>; rel="deprecation"/);
       const deprecationLink = matches && matches.pop();
       log.warn(
         `[@octokit/request] "${requestOptions.method} ${requestOptions.url}" is deprecated. It is scheduled to be removed on ${headers.sunset}${deprecationLink ? `. See ${deprecationLink}` : ""}`
@@ -13009,7 +13009,7 @@ module.exports = {
 
 
 const { parseSetCookie } = __nccwpck_require__(8915)
-const { stringify, getHeadersList } = __nccwpck_require__(3834)
+const { stringify } = __nccwpck_require__(3834)
 const { webidl } = __nccwpck_require__(4222)
 const { Headers } = __nccwpck_require__(6349)
 
@@ -13085,14 +13085,13 @@ function getSetCookies (headers) {
 
   webidl.brandCheck(headers, Headers, { strict: false })
 
-  const cookies = getHeadersList(headers).cookies
+  const cookies = headers.getSetCookie()
 
   if (!cookies) {
     return []
   }
 
-  // In older versions of undici, cookies is a list of name:value.
-  return cookies.map((pair) => parseSetCookie(Array.isArray(pair) ? pair[1] : pair))
+  return cookies.map((pair) => parseSetCookie(pair))
 }
 
 /**
@@ -13520,14 +13519,15 @@ module.exports = {
 /***/ }),
 
 /***/ 3834:
-/***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
+/***/ ((module) => {
 
 "use strict";
 
 
-const assert = __nccwpck_require__(2613)
-const { kHeadersList } = __nccwpck_require__(6443)
-
+/**
+ * @param {string} value
+ * @returns {boolean}
+ */
 function isCTLExcludingHtab (value) {
   if (value.length === 0) {
     return false
@@ -13788,31 +13788,13 @@ function stringify (cookie) {
   return out.join('; ')
 }
 
-let kHeadersListNode
-
-function getHeadersList (headers) {
-  if (headers[kHeadersList]) {
-    return headers[kHeadersList]
-  }
-
-  if (!kHeadersListNode) {
-    kHeadersListNode = Object.getOwnPropertySymbols(headers).find(
-      (symbol) => symbol.description === 'headers list'
-    )
-
-    assert(kHeadersListNode, 'Headers cannot be parsed')
-  }
-
-  const headersList = headers[kHeadersListNode]
-  assert(headersList)
-
-  return headersList
-}
-
 module.exports = {
   isCTLExcludingHtab,
-  stringify,
-  getHeadersList
+  validateCookieName,
+  validateCookiePath,
+  validateCookieValue,
+  toIMFDate,
+  stringify
 }
 
 
@@ -17816,6 +17798,7 @@ const {
   isValidHeaderName,
   isValidHeaderValue
 } = __nccwpck_require__(5523)
+const util = __nccwpck_require__(9023)
 const { webidl } = __nccwpck_require__(4222)
 const assert = __nccwpck_require__(2613)
 
@@ -18369,6 +18352,9 @@ Object.defineProperties(Headers.prototype, {
   [Symbol.toStringTag]: {
     value: 'Headers',
     configurable: true
+  },
+  [util.inspect.custom]: {
+    enumerable: false
   }
 })
 
@@ -27545,6 +27531,20 @@ class Pool extends PoolBase {
       ? { ...options.interceptors }
       : undefined
     this[kFactory] = factory
+
+    this.on('connectionError', (origin, targets, error) => {
+      // If a connection error occurs, we remove the client from the pool,
+      // and emit a connectionError event. They will not be re-used.
+      // Fixes https://github.com/nodejs/undici/issues/3895
+      for (const target of targets) {
+        // Do not use kRemoveClient here, as it will close the client,
+        // but the client cannot be closed in this state.
+        const idx = this[kClients].indexOf(target)
+        if (idx !== -1) {
+          this[kClients].splice(idx, 1)
+        }
+      }
+    })
   }
 
   [kGetDispatcher] () {
@@ -31832,17 +31832,110 @@ const core = __nccwpck_require__(7484);
 const github = __nccwpck_require__(3228);
 const { exec } = __nccwpck_require__(5236);
 
-async function getPRDetails(octokit, context, prNumber) {
-  try {
-    console.log(`Getting details for PR #${prNumber}`);
-    
-    // Get PR info
-    const { data: pr } = await octokit.rest.pulls.get({
-      ...context.repo,
-      pull_number: parseInt(prNumber)
-    });
+// Constants for retry logic
+const MAX_RETRIES = 4;
+const INITIAL_BACKOFF_MS = 2000;
+const MAX_DIFF_SIZE = 100000; // ~100KB to stay well under API limits
+const API_TIMEOUT_MS = 120000; // 2 minutes
 
-    return {
+/**
+ * Sleep for specified milliseconds
+ * @param {number} ms - Milliseconds to sleep
+ * @returns {Promise<void>}
+ */
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+/**
+ * Retry a function with exponential backoff
+ * @param {Function} fn - Async function to retry
+ * @param {string} operation - Description of operation for logging
+ * @param {number} maxRetries - Maximum number of retries
+ * @returns {Promise<any>} Result of the function
+ */
+async function retryWithBackoff(fn, operation, maxRetries = MAX_RETRIES) {
+  let lastError;
+
+  for (let attempt = 0; attempt <= maxRetries; attempt++) {
+    try {
+      if (attempt > 0) {
+        const backoffMs = INITIAL_BACKOFF_MS * Math.pow(2, attempt - 1);
+        core.info(`Retry attempt ${attempt}/${maxRetries} for ${operation} after ${backoffMs}ms`);
+        await sleep(backoffMs);
+      }
+
+      return await fn();
+    } catch (error) {
+      lastError = error;
+
+      // Don't retry on authentication or validation errors
+      if (error.status === 401 || error.status === 403 || error.status === 400) {
+        core.error(`${operation} failed with non-retryable error: ${error.message}`);
+        throw error;
+      }
+
+      if (attempt < maxRetries) {
+        core.warning(`${operation} failed (attempt ${attempt + 1}/${maxRetries + 1}): ${error.message}`);
+      } else {
+        core.error(`${operation} failed after ${maxRetries + 1} attempts`);
+      }
+    }
+  }
+
+  throw lastError;
+}
+
+/**
+ * Validate input parameters
+ * @param {string} token - GitHub token
+ * @param {string} anthropicKey - Anthropic API key
+ * @param {string|number} prNumber - PR number
+ */
+function validateInputs(token, anthropicKey, prNumber) {
+  if (!token || token.trim() === '') {
+    throw new Error('github-token is required and cannot be empty');
+  }
+
+  if (!anthropicKey || anthropicKey.trim() === '') {
+    throw new Error('anthropic-key is required and cannot be empty');
+  }
+
+  if (!anthropicKey.startsWith('sk-ant-')) {
+    core.warning('anthropic-key does not match expected format (should start with sk-ant-)');
+  }
+
+  const prNum = parseInt(prNumber);
+  if (isNaN(prNum) || prNum <= 0) {
+    throw new Error(`Invalid PR number: ${prNumber}. Must be a positive integer.`);
+  }
+
+  core.info('✓ Input validation passed');
+  return prNum;
+}
+
+/**
+ * Get PR details from GitHub API with retry logic
+ * @param {Object} octokit - GitHub API client
+ * @param {Object} context - GitHub context
+ * @param {number} prNumber - PR number
+ * @returns {Promise<Object>} PR details
+ */
+async function getPRDetails(octokit, context, prNumber) {
+  core.startGroup('Fetching PR details');
+
+  try {
+    core.info(`Getting details for PR #${prNumber}`);
+
+    const { data: pr } = await retryWithBackoff(
+      async () => await octokit.rest.pulls.get({
+        ...context.repo,
+        pull_number: prNumber
+      }),
+      'Get PR details'
+    );
+
+    const result = {
       number: pr.number,
       base: {
         sha: pr.base.sha,
@@ -31851,42 +31944,154 @@ async function getPRDetails(octokit, context, prNumber) {
       head: {
         sha: pr.head.sha,
         ref: pr.head.ref
-      }
+      },
+      title: pr.title,
+      state: pr.state
     };
+
+    core.info(`✓ Retrieved PR #${result.number}: "${result.title}"`);
+    core.info(`  Base: ${result.base.ref} (${result.base.sha.substring(0, 7)})`);
+    core.info(`  Head: ${result.head.ref} (${result.head.sha.substring(0, 7)})`);
+    core.debug(`PR state: ${result.state}`);
+
+    return result;
   } catch (error) {
-    throw new Error(`Failed to get PR details: ${error.message}`);
+    core.error(`Failed to get PR details: ${error.message}`);
+    throw new Error(`Failed to get PR details for #${prNumber}: ${error.message}`);
+  } finally {
+    core.endGroup();
   }
 }
 
+/**
+ * Setup git configuration with retry logic
+ * @returns {Promise<void>}
+ */
 async function setupGitConfig() {
-  // Configure git to fetch PR refs
-  await exec('git', ['config', '--local', '--add', 'remote.origin.fetch', '+refs/pull/*/head:refs/remotes/origin/pr/*']);
-  await exec('git', ['fetch', 'origin']);
-  await exec('git', ['config', '--global', 'user.name', 'claude-code-review[bot]']);
-  await exec('git', ['config', '--global', 'user.email', 'claude-code-review[bot]@users.noreply.github.com']);
+  core.startGroup('Setting up Git configuration');
+
+  try {
+    core.info('Configuring git to fetch PR refs...');
+    await retryWithBackoff(
+      async () => await exec('git', ['config', '--local', '--add', 'remote.origin.fetch', '+refs/pull/*/head:refs/remotes/origin/pr/*']),
+      'Git config fetch refs'
+    );
+
+    core.info('Fetching from origin...');
+    await retryWithBackoff(
+      async () => await exec('git', ['fetch', 'origin']),
+      'Git fetch origin'
+    );
+
+    core.info('Setting git user identity...');
+    await exec('git', ['config', '--global', 'user.name', 'claude-code-review[bot]']);
+    await exec('git', ['config', '--global', 'user.email', 'claude-code-review[bot]@users.noreply.github.com']);
+
+    core.info('✓ Git configuration completed');
+  } catch (error) {
+    core.error(`Git configuration failed: ${error.message}`);
+    throw new Error(`Failed to configure git: ${error.message}`);
+  } finally {
+    core.endGroup();
+  }
 }
 
+/**
+ * Generate diff between two commits with size validation
+ * @param {string} baseSha - Base commit SHA
+ * @param {string} headSha - Head commit SHA
+ * @returns {Promise<string>} Diff content
+ */
 async function getDiff(baseSha, headSha) {
+  core.startGroup('Generating diff');
+
   let diffContent = '';
-  
+  let stderr = '';
+
   try {
+    core.info(`Generating diff between ${baseSha.substring(0, 7)} and ${headSha.substring(0, 7)}`);
+
     // Get the full diff with context
     await exec('git', ['diff', '-U10', baseSha, headSha], {
       listeners: {
         stdout: (data) => {
           diffContent += data.toString();
+        },
+        stderr: (data) => {
+          stderr += data.toString();
         }
       }
     });
 
+    if (stderr) {
+      core.debug(`Git diff stderr: ${stderr}`);
+    }
+
+    const diffSize = Buffer.byteLength(diffContent, 'utf8');
+    core.info(`✓ Diff generated: ${diffSize} bytes`);
+
+    if (diffSize === 0) {
+      core.warning('Diff is empty - no changes found');
+      return '';
+    }
+
+    if (diffSize > MAX_DIFF_SIZE) {
+      core.warning(`Diff size (${diffSize} bytes) exceeds maximum (${MAX_DIFF_SIZE} bytes)`);
+      const truncated = diffContent.substring(0, MAX_DIFF_SIZE);
+      const lines = truncated.split('\n').length;
+      core.warning(`Diff truncated to ${MAX_DIFF_SIZE} bytes (~${lines} lines)`);
+      return truncated + '\n\n[... diff truncated due to size ...]';
+    }
+
+    const lines = diffContent.split('\n').length;
+    core.info(`Diff contains ${lines} lines`);
+
     return diffContent;
   } catch (error) {
+    core.error(`Failed to generate diff: ${error.message}`);
+    if (stderr) {
+      core.error(`Git stderr: ${stderr}`);
+    }
     throw new Error(`Failed to generate diff: ${error.message}`);
+  } finally {
+    core.endGroup();
   }
 }
 
+/**
+ * Create fetch with timeout
+ * @param {string} url - URL to fetch
+ * @param {Object} options - Fetch options
+ * @param {number} timeout - Timeout in milliseconds
+ * @returns {Promise<Response>} Fetch response
+ */
+async function fetchWithTimeout(url, options, timeout = API_TIMEOUT_MS) {
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
+}
+
+/**
+ * Analyze code diff with Claude API including retry logic and proper error handling
+ * @param {string} diffContent - Code diff to analyze
+ * @param {string} anthropicKey - Anthropic API key
+ * @returns {Promise<string|null>} Code review text
+ */
 async function analyzeWithClaude(diffContent, anthropicKey) {
-  if (!diffContent.trim()) {
+  core.startGroup('Analyzing with Claude AI');
+
+  if (!diffContent || !diffContent.trim()) {
+    core.warning('Diff content is empty, skipping analysis');
+    core.endGroup();
     return null;
   }
 
@@ -31906,7 +32111,7 @@ For each issue found:
 - Provide specific recommendations for fixes
 - Include code examples where helpful
 
-- If no issues are found in a particular area, explicitly state that. 
+- If no issues are found in a particular area, explicitly state that.
 - If it's a dependency update, evaluate with strict scrutiny the implications of the change.
 - No matter your findings, give a summary of the pull request.
 
@@ -31917,110 +32122,228 @@ ${diffContent}
 \`\`\``;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': anthropicKey,
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 4096,
-        temperature: 0.7,
-        messages: [{
-          role: 'user',
-          content: prompt
-        }]
-      })
-    });
+    core.info('Sending request to Claude API...');
+    core.debug(`Prompt length: ${prompt.length} characters`);
 
-    const data = await response.json();
-    if (!data.content?.[0]?.text) {
-      throw new Error(`API Error: ${JSON.stringify(data)}`);
+    const review = await retryWithBackoff(async () => {
+      const response = await fetchWithTimeout('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': anthropicKey,
+          'anthropic-version': '2023-06-01'
+        },
+        body: JSON.stringify({
+          model: 'claude-3-5-sonnet-20241022',
+          max_tokens: 4096,
+          temperature: 0.7,
+          messages: [{
+            role: 'user',
+            content: prompt
+          }]
+        })
+      }, API_TIMEOUT_MS);
+
+      // Check HTTP status
+      if (!response.ok) {
+        const errorText = await response.text();
+        let errorMessage;
+
+        try {
+          const errorData = JSON.parse(errorText);
+          errorMessage = errorData.error?.message || errorData.message || errorText;
+        } catch {
+          errorMessage = errorText;
+        }
+
+        // Create error with status for retry logic
+        const error = new Error(`API returned ${response.status}: ${errorMessage}`);
+        error.status = response.status;
+
+        // Handle rate limiting
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('retry-after');
+          if (retryAfter) {
+            core.warning(`Rate limited. Retry after ${retryAfter} seconds`);
+            error.retryAfter = parseInt(retryAfter) * 1000;
+          }
+        }
+
+        throw error;
+      }
+
+      const data = await response.json();
+
+      if (!data.content?.[0]?.text) {
+        throw new Error(`Invalid API response: missing content. Response: ${JSON.stringify(data).substring(0, 200)}`);
+      }
+
+      return data.content[0].text;
+    }, 'Claude API request', 3); // Use fewer retries for API calls
+
+    const reviewLength = review.length;
+    core.info(`✓ Received review from Claude: ${reviewLength} characters`);
+
+    return review;
+  } catch (error) {
+    if (error.name === 'AbortError') {
+      core.error(`Claude API request timed out after ${API_TIMEOUT_MS}ms`);
+      throw new Error(`Claude API request timed out after ${API_TIMEOUT_MS / 1000} seconds`);
     }
 
-    return data.content[0].text;
-  } catch (error) {
-    throw new Error(`Claude API error: ${error.message}`);
+    core.error(`Claude API error: ${error.message}`);
+    throw new Error(`Failed to analyze with Claude: ${error.message}`);
+  } finally {
+    core.endGroup();
   }
 }
 
+/**
+ * Post code review as a comment on the PR with retry logic
+ * @param {Object} octokit - GitHub API client
+ * @param {Object} context - GitHub context
+ * @param {string} review - Review text
+ * @param {number} prNumber - PR number
+ * @returns {Promise<void>}
+ */
 async function postReview(octokit, context, review, prNumber) {
-  try {
-    // Escape special characters for proper formatting
-    const escapedReview = review
-      .replace(/(?<=[\s\n])`([^`]+)`(?=[\s\n])/g, '\\`$1\\`')
-      .replace(/```/g, '\\`\\`\\`')
-      .replace(/\${/g, '\\${');
+  core.startGroup('Posting review comment');
 
-    await octokit.rest.issues.createComment({
-      ...context.repo,
-      issue_number: prNumber,
-      body: `# Claude Code Review\n\n${escapedReview}`
-    });
+  try {
+    core.info(`Posting review to PR #${prNumber}...`);
+    core.debug(`Review length: ${review.length} characters`);
+
+    // GitHub markdown handles most content correctly without escaping
+    // Only ensure the review doesn't break the comment
+    const body = `# 🤖 Claude Code Review\n\n${review}`;
+
+    const comment = await retryWithBackoff(
+      async () => await octokit.rest.issues.createComment({
+        ...context.repo,
+        issue_number: prNumber,
+        body: body
+      }),
+      'Post review comment'
+    );
+
+    core.info(`✓ Review posted successfully`);
+    core.debug(`Comment ID: ${comment.data.id}`);
+    core.debug(`Comment URL: ${comment.data.html_url}`);
+
   } catch (error) {
+    core.error(`Failed to post review comment: ${error.message}`);
     throw new Error(`Failed to post review: ${error.message}`);
+  } finally {
+    core.endGroup();
   }
 }
 
+/**
+ * Main execution function
+ */
 async function run() {
+  const startTime = Date.now();
+
   try {
+    core.info('🚀 Starting Claude Code Review Action');
+    core.info(`Node version: ${process.version}`);
+    core.info(`Platform: ${process.platform}`);
+
     // Get inputs
     const token = core.getInput('github-token', { required: true });
     const anthropicKey = core.getInput('anthropic-key', { required: true });
-    
-    // Initialize GitHub client
-    const octokit = github.getOctokit(token);
-    const context = github.context;
+    let prNumber = core.getInput('pr-number');
 
-    // Get PR number from event or input
-    let prNumber;
-    if (context.eventName === 'pull_request') {
-      prNumber = context.payload.pull_request.number;
-    } else {
-      prNumber = core.getInput('pr-number', { required: true });
+    // Get PR number from event if not provided
+    const context = github.context;
+    if (!prNumber && context.eventName === 'pull_request') {
+      prNumber = context.payload.pull_request?.number;
     }
+
+    // Validate inputs
+    const validatedPrNumber = validateInputs(token, anthropicKey, prNumber);
+
+    // Mask sensitive data in logs
+    core.setSecret(anthropicKey);
+
+    // Initialize GitHub client
+    core.info('Initializing GitHub client...');
+    const octokit = github.getOctokit(token);
+    core.info(`Repository: ${context.repo.owner}/${context.repo.repo}`);
+    core.info(`Event: ${context.eventName}`);
 
     // Set up git configuration
     await setupGitConfig();
 
     // Get PR details
-    const pr = await getPRDetails(octokit, context, prNumber);
-    console.log(`Retrieved details for PR #${pr.number}`);
+    const pr = await getPRDetails(octokit, context, validatedPrNumber);
+
+    // Validate PR state
+    if (pr.state === 'closed') {
+      core.warning(`PR #${pr.number} is closed. Review will still be posted.`);
+    }
 
     // Generate diff
-    console.log('Generating diff...');
     const diff = await getDiff(pr.base.sha, pr.head.sha);
-    
-    if (!diff) {
-      console.log('No relevant changes found');
+
+    if (!diff || diff.trim() === '') {
+      core.warning('No changes found in diff');
       core.setOutput('diff_size', '0');
+      core.setOutput('review', 'No changes to review');
+      core.info('✓ Action completed (no changes to review)');
       return;
     }
 
-    core.setOutput('diff_size', diff.length.toString());
+    const diffSize = Buffer.byteLength(diff, 'utf8');
+    core.setOutput('diff_size', diffSize.toString());
 
     // Analyze with Claude
-    console.log('Analyzing with Claude...');
     const review = await analyzeWithClaude(diff, anthropicKey);
-    
+
     if (!review) {
-      console.log('No review generated');
+      core.warning('No review generated by Claude');
+      core.setOutput('review', '');
+      core.info('✓ Action completed (no review generated)');
       return;
     }
 
     // Post review
-    console.log('Posting review...');
     await postReview(octokit, context, review, pr.number);
 
     // Set outputs
     core.setOutput('review', review);
 
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    core.info(`✓ Claude Code Review completed successfully in ${duration}s`);
+
   } catch (error) {
+    const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+    core.error(`✗ Action failed after ${duration}s`);
+    core.error(`Error: ${error.message}`);
+
+    if (error.stack) {
+      core.debug(`Stack trace: ${error.stack}`);
+    }
+
     core.setFailed(error.message);
+    process.exit(1);
   }
 }
+
+// Handle unhandled rejections
+process.on('unhandledRejection', (reason, promise) => {
+  core.error('Unhandled Rejection at:', promise);
+  core.error('Reason:', reason);
+  core.setFailed(`Unhandled rejection: ${reason}`);
+  process.exit(1);
+});
+
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  core.error('Uncaught Exception:', error);
+  core.setFailed(`Uncaught exception: ${error.message}`);
+  process.exit(1);
+});
 
 run();
 
