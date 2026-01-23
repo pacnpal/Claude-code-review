@@ -7,11 +7,12 @@
 
 ## ⚠️ DEPRECATED
 
-**This project is deprecated.** Anthropic Claude now offers official code review capabilities through GitHub Copilot and other integrated solutions. We recommend using the official tools for code review functionality:
+**This project is deprecated.** Anthropic now offers official Claude integrations and there are improved alternatives for AI-powered code review. We recommend exploring these official solutions:
 
-- **GitHub Copilot with Claude**: GitHub now offers native integration with Claude for code reviews
-- **Claude for Workspace**: Direct Anthropic integrations for team workflows
-- **Official API**: Use Anthropic's official API with updated models and features
+- **Anthropic API**: Use the official Anthropic API with the latest Claude models
+- **Claude for Workspace**: Enterprise integration for team workflows
+- **GitHub Copilot**: AI-powered code assistance (note: primarily uses OpenAI models)
+- **Other AI Code Review Tools**: Various third-party integrations with modern AI models
 
 This repository will remain available for historical reference, but is no longer actively maintained.
 
