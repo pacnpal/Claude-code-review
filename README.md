@@ -5,6 +5,18 @@
 ![Claude](https://img.shields.io/badge/Claude-Sonnet%204.5-blue)
 ![Node](https://img.shields.io/badge/node-20-green)
 
+## ⚠️ DEPRECATED
+
+**This project is deprecated.** Anthropic Claude now offers official code review capabilities through GitHub Copilot and other integrated solutions. We recommend using the official tools for code review functionality:
+
+- **GitHub Copilot with Claude**: GitHub now offers native integration with Claude for code reviews
+- **Claude for Sheets and Enterprise**: Direct Anthropic integrations for team workflows
+- **Official API**: Use Anthropic's official API with updated models and features
+
+This repository will remain available for historical reference, but is no longer actively maintained.
+
+---
+
 A GitHub Action that performs automated code reviews using Claude Sonnet 4.5, Anthropic's latest AI model for code analysis.
 
 ## Why Use Claude Code Review?
