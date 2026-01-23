@@ -18,7 +18,7 @@ This repository will remain available for historical reference, but is no longer
 
 ---
 
-A GitHub Action that performs automated code reviews using Claude Sonnet 4.5, Anthropic's latest AI model for code analysis.
+A GitHub Action that performs automated code reviews using Claude Sonnet 4.5, Anthropic's AI model for code analysis.
 
 ## Why Use Claude Code Review?
 
