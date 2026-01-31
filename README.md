@@ -1,13 +1,16 @@
 # Claude Code Review Action
 
+![Archived](https://img.shields.io/badge/status-ARCHIVED-red)
 ![GitHub](https://img.shields.io/github/license/pacnpal/claude-code-review)
 ![GitHub Actions Workflow Status](https://img.shields.io/badge/actions-passing-brightgreen)
 ![Claude](https://img.shields.io/badge/Claude-Sonnet%204.5-blue)
 ![Node](https://img.shields.io/badge/node-20-green)
 
-## ⚠️ DEPRECATED
+## 🗄️ ARCHIVED - NO LONGER MAINTAINED
 
-**This project is deprecated.** Anthropic now offers official Claude integrations and there are improved alternatives for AI-powered code review. We recommend exploring these official solutions:
+> **⚠️ IMPORTANT: This repository is archived and read-only. No new issues, pull requests, or updates will be accepted.**
+
+**This project is deprecated and archived.** Anthropic now offers official Claude integrations and there are improved alternatives for AI-powered code review. We recommend exploring these official solutions:
 
 - **Anthropic API**: Use the official Anthropic API with the latest Claude models
 - **Claude for Workspace**: Enterprise integration for team workflows

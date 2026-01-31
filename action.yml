@@ -1,6 +1,6 @@
 # action.yml
 name: 'Claude Code Review'
-description: 'Automated code review using Claude'
+description: '[ARCHIVED] Automated code review using Claude - No longer maintained'
 inputs:
   github-token:
     description: 'GitHub token'
