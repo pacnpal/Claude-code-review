@@ -1,7 +1,7 @@
 {
   "name": "claude-code-review-action",
   "version": "1.0.0",
-  "description": "GitHub Action for code review using Claude",
+  "description": "[ARCHIVED] GitHub Action for code review using Claude - No longer maintained",
   "main": "action.js",
   "scripts": {
     "test": "jest",
